@@ -1,0 +1,19 @@
+---
+title: "Introducción"
+output: html_notebook
+---
+
+## ¿Qué es _Machine Learning_?
+
+## Tipos de _Machine Learning_
+
+## Aprendizaje supervisado
+
+## Aprendizaje no supervisado
+
+## Aprendizaje por refuerzo
+
+## Modelos, errores y evaluación
+
+## Interpretabilidad y ética
+

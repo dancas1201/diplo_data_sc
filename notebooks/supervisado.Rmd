@@ -1,0 +1,16 @@
+---
+title: "El problema de aprendizaje supervisado"
+output: html_notebook
+---
+
+## Señal y ruido
+
+## Objetivo de un modelo
+
+## Complejidad de un modelo 
+
+## Ejemplo: Dígitos
+
+## Sesgo vs Varianza
+
+## Maldición de la dimensionalidad
