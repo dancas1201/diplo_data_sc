@@ -59,6 +59,10 @@ Bajo este esquema, el objetivo de un modelo de aprendizaje supervisado es **esti
   \hat{y} = \hat{E}[g | X] =  \hat{f}(X)
 \end{equation}
 
+En este contexto, **predecir** quiere decir generar valores $\hat{y}$ dados ciertos datos de entrada, es decir, evaluar el estimador en nuestros datos.
+
+**Ejemplo**
+
 ## Complejidad de un modelo, sesgo vs varianza
 
 ## Métricas de error
