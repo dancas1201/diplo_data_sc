@@ -62,8 +62,94 @@ Bajo este esquema, el objetivo de un modelo de aprendizaje supervisado es **esti
 En este contexto, **predecir** quiere decir generar valores $\hat{y}$ dados ciertos datos de entrada, es decir, evaluar el estimador en nuestros datos.
 
 **Ejemplo**
+```{r}
+ggplot(mapping=aes(x=x, y=y)) +
+  geom_point() +
+  geom_smooth(method=lm, se=F, color='gray') + 
+  geom_smooth(method=lm, se=F, formula=y~poly(x, 2), color="blue") +
+  geom_smooth(method=lm, se=F, formula=y~poly(x, 15), color='red') +
+  theme_light()
+```
+
+En esta gráfica tenemos tres estimadores distintos para los mismos datos. ¿Cuál resulta más apropiado?
 
 ## Complejidad de un modelo, sesgo vs varianza
 
+En el ejemplo anterior, la línea en gris representa un estimador sencillo, mientras que la linea roja representa un estimador mucho más complejo. La línea en azul es un estimador ni tan sencillo, ni tan complejo. Lo que podemos observar es que hay un grado de complejidad "correcta" para descubrir la señal en este ejemplo.
+
+Este fenómeno se da en general en el aprendizaje supervisado, y se conoce como el **_bias-variance tradeoff_**, ya que los modelos sencillos pueden tener alto **sesgo (bias)**, y los modelos complejos alta **varianza (variance)**. 
+
+**Sesgo** se refiere a la capacidad del modelo de replicar puntos individuales, es decir, es una medida de que tan atinadas son nuestras estimaciones, un modelo con alto sesgo no toma en cuenta casos particulares o especiales, sino que aplica una medida similar para la mayoría de los puntos. Por otro lado, la **varianza** se refiere a la volatilidad del modelo, y nos dice que tan distintos serán nuestros resultados para un conjunto diferente de datos.
+
+**Ejemplo**
+
+Las siguientes gráficas muestra los estimadores presentados en la gráfica anterior, entrenados con diferentes muestras de los mismos datos
+
+```{r}
+sample_size <- 20
+samples <-do.call(c, lapply(1:5, function(i) sample(1:length(x), sample_size, replace=FALSE)))
+sample_idx <- rep(1:5, each=sample_size)
+ggplot(mapping=aes(x=x[samples],y=y[samples],group=as.factor(sample_idx))) + 
+  geom_smooth(method=lm, se=F, color="gray", fullrange=T) + 
+  geom_point(aes(x=x, y=y, group=1)) +
+  theme_light() +
+  xlab("x") + 
+  ylab("y")
+
+```
+
+```{r}
+samples <-do.call(c, lapply(1:5, function(i) sample(1:length(x), sample_size, replace=FALSE)))
+sample_idx <- rep(1:5, each=sample_size)
+ggplot(mapping=aes(x=x[samples],y=y[samples],group=as.factor(sample_idx))) + 
+  geom_smooth(method=lm, se=F, color="blue", formula=y~poly(x, 2)) + 
+  geom_point(aes(x=x, y=y, group=1)) +
+  theme_light() +
+  xlab("x") + 
+  ylab("y")
+
+```
+
+```{r}
+samples <-do.call(c, lapply(1:5, function(i) sample(1:length(x), sample_size, replace=FALSE)))
+sample_idx <- rep(1:5, each=sample_size)
+ggplot(mapping=aes(x=x[samples],y=y[samples],group=as.factor(sample_idx))) + 
+  geom_smooth(method=lm, se=F, formula=y~poly(x, 15), color="red") + 
+  geom_point(aes(x=x, y=y, group=1)) + 
+  theme_light() +
+  xlab("x") + 
+  ylab("y") +
+  coord_cartesian(ylim = c(-40, 40))
+
+```
+
+En general, es importante buscar aquel modelo que balancee el sesgo con la varianza para capturar la mayoría de los patrones de nuestros datos, pero no introducir patrones innecesarios (alta varianza). Para esto necesitamos una manera de **evaluar un modelo**
+
 ## Métricas de error
 
+Para poder evaluar nuestros modelos, necesitamos resumir de alguna manera sus **errores** a una o varias métricas que nos permitan compararlos. El error del modelo típícamente se refiere a la discrepancia entre las estimaciones o predicciones realizadas y los datos reales, y depende del conjunto de datos que usemos.
+
+Una métrica popular es el error cuadrático medio, que se define de la siguiente manera:
+
+\begin{equation}
+  MSE(\hat{y}, y) = \displaystyle\frac{1}{n}\sum_{i=1}^n (y_i - \hat{y})^2
+\end{equation}
+
+¿Cuál de estos modelos tendría menor MSE? 
+
+```{r}
+ggplot(mapping=aes(x=x, y=y)) +
+  geom_point() +
+  geom_smooth(method=lm, se=F, color='gray') + 
+  geom_smooth(method=lm, se=F, formula=y~poly(x, 2), color="blue") +
+  geom_smooth(method=lm, se=F, formula=y~poly(x, 15), color='red') +
+  theme_light()
+```
+
+Esto se da porque usamos **el mismo conjunto para entrenar que para evaluar**, esto tiende a sobreestimar el error estimado de nuestro modelo. Por lo mismo se sugiere separar nuestro conjunto de datos en tres:
+
+* Conjunto de entrenamiento
+* Conjunto de validación
+* Conjunto de prueba
+
+Esto nos permite estimar de una manera más certera el error.
