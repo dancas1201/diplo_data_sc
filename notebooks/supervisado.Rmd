@@ -146,6 +146,20 @@ ggplot(mapping=aes(x=x, y=y)) +
   theme_light()
 ```
 
+```{r}
+data <- list(x=x, y=y)
+mod1 <- lm(y~x, data=data)
+err1 <- mean((y-mod1$fitted.values)^2)
+print(paste0("Error modelo lineal: ", err1))
+mod2 <- lm(y~poly(x,2))
+err2 <- mean((y-mod2$fitted.values)^2)
+print(paste0("Error modelo cuadrático: ", err2))
+mod3 <- lm(y~poly(x,15))
+err3 <- mean((y-mod3$fitted.values)^2)
+print(paste0("Error modelo polinomial: ", err3))
+```
+
+
 Esto se da porque usamos **el mismo conjunto para entrenar que para evaluar**, esto tiende a sobreestimar el error estimado de nuestro modelo. Por lo mismo se sugiere separar nuestro conjunto de datos en tres:
 
 * Conjunto de entrenamiento
