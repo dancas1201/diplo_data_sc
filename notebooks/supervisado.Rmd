@@ -5,6 +5,39 @@ output: html_notebook
 
 ## Señal y ruido
 
+Para abordar el problema de aprendizaje supervisado, es útil pensar nuestra variable de respuesta $y$ como una **función estocástica** de los datos $X$ (con variables de entrada $x_1, x_2, \ldots, x_p$). es decir: 
+
+\begin{equation*}
+  y = g(X)
+\end{equation*}
+
+donde $g$ es la función antes mencionada. Este supuesto general es aplicable a casi cualquier fenómeno que incluya aleatoridad, pero es difícil de manejar, por lo tanto, podemos proponer formas más específicas para la estocasticidad, por ejemplo:
+
+\begin{align*}
+  y =& f(X) + \epsilon \\
+  y =& f(X) * \epsilon \\
+  y =& f(X)^\epsilon \\
+  \ldots
+\end{align*}
+
+donde $f$ es una **función deterministica** (llamada señal) y $\epsilon$ captura el componente aleatorio (ruido). Como podemos observar, el supuesto central es el de **separabilidad** de la señal y el ruido, y la forma funcional específica suele no ser tan importante. En general, en este curso supondremos $y = f(X) + \epsilon$.
+
+**Ejemplo**
+
+```{r}
+library(ggplot2)
+f <- function(x) {
+  y <- x
+  y <- y * 2 
+  y[y > 0] <- y[y > 0] + 0.05*y[y > 0]^2
+  y
+}
+
+x <- -10:10
+
+ggplot() + geom_line(aes(x=x, y=f(x))) + theme_light()
+```
+
 ## Objetivo de un modelo
 
 ## Complejidad de un modelo 
