@@ -33,17 +33,33 @@ f <- function(x) {
   y
 }
 
-x <- -10:10
+x <- -20:20/2
+eps <- rnorm(length(x), 0, 10)
+y = f(x) + eps
+ggplot() + 
+  geom_line(aes(x=x, y=f(x))) +
+  geom_point(aes(x=x, y=y)) +
+  geom_segment(aes(x=x, y=f(x), xend=x, yend=y), color='red') +
+  theme_light()
+```
 
-ggplot() + geom_line(aes(x=x, y=f(x))) + theme_light()
+En esta gráfica, los puntos representan $y$, la señal está dada por la linea sólida, y en rojo se indica la magnitud de $\epsilon$ para cada punto. Podemos observar también la distribución de $\epsilon$
+
+```{r}
+ggplot() + geom_histogram(aes(x=eps), binwidth=5) + theme_light()
 ```
 
 ## Objetivo de un modelo
 
-## Complejidad de un modelo 
+Dado que la señal $f$ y el ruido $\epsilon$ son independientes, el mejor resultado teórico posible para estimar $y$ es $\hat{y} = f(X)$
 
-## Ejemplo: Dígitos
+Bajo este esquema, el objetivo de un modelo de aprendizaje supervisado es **estimar la señal**. Si además, suponemos que nuestro ruido (o error) $\epsilon$ tiene valor esperado de 0 (Este supuesto es suficientemente general, pues siempre podemos añadir una consante a la señal). Entonces el problema de aprendizaje supervisado se vuelve estimar el **valor esperado de la función $g$, dados los datos X**, es decir:
 
-## Sesgo vs Varianza
+\begin{equation}
+  \hat{y} = \hat{E}[g | X] =  \hat{f}(X)
+\end{equation}
 
-## Maldición de la dimensionalidad
+## Complejidad de un modelo, sesgo vs varianza
+
+## Métricas de error
+
