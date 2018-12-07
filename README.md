@@ -2,11 +2,11 @@
 
 Este repositorio alberga notas y código para la clase del diplomado de Data Science del ITAM para Citibanamex
 
-## Introducción
+## [Introducción](notebooks/intro.Rmd)
 
-## El problema de aprendizaje supervisado
+## [El problema de aprendizaje supervisado](notebooks/supervisado.Rmd)
 
-## k-Vecinos cercanos
+## [k-Vecinos cercanos](notebooks/k-vecinos.Rmd)
 
 ## Regresión lineal
 
