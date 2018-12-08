@@ -1,6 +1,8 @@
 ---
 title: "El problema de aprendizaje supervisado"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ## Señal y ruido
@@ -25,6 +27,7 @@ donde $f$ es una **función deterministica** (llamada señal) y $\epsilon$ captu
 **Ejemplo**
 
 ```{r}
+set.seed(42)
 library(ggplot2)
 f <- function(x) {
   y <- x
@@ -167,3 +170,41 @@ Esto se da porque usamos **el mismo conjunto para entrenar que para evaluar**, e
 * Conjunto de prueba
 
 Esto nos permite estimar de una manera más certera el error.
+
+
+```{r}
+
+set.seed(42)
+train_size <- 30
+test_size <-length(x) - train_size
+
+train_idx <- sample(1:length(x), train_size, replace=FALSE)
+train_x <- x[train_idx]
+train_y <- y[train_idx]
+
+test_x <- x[-train_idx]
+test_y <- y[-train_idx]
+
+train_data <- list(x=train_x, y=train_y)
+mod1 <- lm(y~x, data=train_data)
+mod2 <- lm(y~poly(x,2), data=train_data)
+mod3 <- lm(y~poly(x,15), data=train_data)
+
+ggplot(mapping=aes(x=train_x, y=train_y)) +
+  geom_point() +
+  geom_smooth(method=lm, se=F, color='gray') + 
+  geom_smooth(method=lm, se=F, formula=y~poly(x, 2), color="blue") +
+  geom_smooth(method=lm, se=F, formula=y~poly(x, 15), color='red') +
+  theme_light()
+
+```
+
+```{r}
+test_data <- list(x=test_x, y=test_y)
+err.lineal <- mean((test_y - predict(mod1, newdata=test_data))^2)
+print(paste0("Error modelo lineal: ", err.lineal))
+err.quad <- mean((test_y - predict(mod2, newdata=test_data))^2)
+print(paste0("Error modelo cuadrático: ", err.quad))
+err.poly <- mean((test_y - predict(mod3, newdata=test_data))^2)
+print(paste0("Error modelo polinomial (15): ", err.poly))
+```

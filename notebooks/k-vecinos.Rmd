@@ -1,0 +1,142 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ISLR)
+library(FNN)
+set.seed(42)
+n <- nrow(Auto)
+train_size <- 300
+
+# Indices de entrenamiento
+train_idx <- sample(1:n, train_size, replace=FALSE)
+train_cols <- c("cylinders", "displacement", "horsepower", "weight", "acceleration", "year", "origin")
+target_col <- "mpg"
+
+train_x <- Auto[train_idx, train_cols]
+train_y <- Auto[train_idx, target_col]
+
+test_x <- Auto[-train_idx, train_cols]
+test_y <- Auto[-train_idx, target_col]
+
+baseline <- mean(train_y)
+mse.base <- mean((test_y - baseline)^2)
+print(mse.base)
+```
+
+```{r}
+library(ggplot2)
+knn.5 <- knn.reg(train_x, test=test_x, y=train_y, k=5)
+mse <- mean((test_y - knn.5$pred)^2)
+ggplot(mapping=aes(x=test_y, knn.5$pred)) + 
+  geom_point() +
+  geom_abline(intercept=0, slope=1) + 
+  xlab("Predichos") + 
+  ylab("Reales") +
+  ggtitle(paste0("k = 5, MSE = ", mse)) + 
+  theme_minimal()
+```
+
+
+```{r}
+auto.knn <- function(k) {
+  knn <- knn.reg(train_x, test=test_x, y=train_y, k=k)
+  mse <- mean((test_y - knn$pred)^2)
+  ggplot(mapping=aes(x=test_y, knn$pred)) + 
+    geom_point() +
+    geom_abline(intercept=0, slope=1) + 
+    xlab("Predichos") + 
+    ylab("Reales") +
+    ggtitle(paste0("k = ", k, ", MSE = ", mse)) + 
+    theme_minimal() 
+}
+auto.knn(10)
+```
+
+```{r}
+auto.knn.mse <- function(k) {
+  knn <- knn.reg(train_x, test=test_x, y=train_y, k=k)
+  mse <- mean((test_y - knn$pred)^2)
+  mse
+}
+
+mse.k <- sapply(300:1, auto.knn.mse)
+ggplot(mapping=aes(x=300:1, y=mse.k)) + 
+  geom_line() + 
+  geom_hline(yintercept = mse.base)
+```
+
+```{r}
+ggplot(Auto, aes(x=origin, group=origin, y=mpg)) + geom_boxplot()
+```
+
+```{r}
+data <- Auto
+data["japones"] = data["origin"] == 3
+
+set.seed(52)
+# Indices de entrenamiento
+train_idx <- sample(1:n, train_size, replace=FALSE)
+train_cols <- c("cylinders", "displacement", "horsepower", "weight", "acceleration", "year", "mpg")
+target_col <- "japones"
+
+train_x <- data[train_idx, train_cols]
+train_y <- data[train_idx, target_col]
+
+test_x <- data[-train_idx, train_cols]
+test_y <- data[-train_idx, target_col]
+
+baseline <- test_x["mpg"] > 30
+mis.cl.base <- mean(baseline != test_y)
+mis.cl.base
+```
+
+```{r}
+
+japan.knn <- function(k) {
+  knn <- knn(train=train_x, test=test_x, cl=as.factor(train_y), k=k)
+  mis.cl <- mean(knn != test_y)
+  mis.cl
+}
+
+ks = 1:300
+mis.cl.k <- sapply(ks, japan.knn)
+ggplot(mapping=aes(x=ks, y=mis.cl.k)) + geom_line() + 
+  geom_hline(yintercept=mis.cl.base)
+```
+
+```{r}
+library(ISLR)
+library(FNN)
+set.seed(42)
+n <- nrow(Auto)
+train_size <- 300
+
+# Indices de entrenamiento
+train_idx <- sample(1:n, train_size, replace=FALSE)
+```
+
+```{r}
+train_cols <- c("cylinders", "displacement", "horsepower", "weight", "acceleration", "year", "origin", "mpg")
+
+kth.neighbor.dist <- function(p, k) {
+  cols <- train_cols[1:p] 
+  train_x <- Auto[train_idx, cols]
+  test_x <- Auto[-train_idx, cols]
+  
+  maxs <- sapply(train_x, max)
+  mins <- sapply(train_x, min)
+  
+  train_scaled <- sapply(1:length(cols), function(i) (train_x[,i] - mins[i])/(maxs[i] - mins[i]))
+  test_scaled <- sapply(1:length(cols), function(i) (test_x[,i] - mins[i])/(maxs[i] - mins[i]))
+  
+  colMeans(get.knnx(train_scaled, query=test_scaled, k=k)$nn.dist)[k]
+}
+
+ncols <- 2:8
+d <- sapply(ncols, kth.neighbor.dist, k=30)
+ggplot(mapping=aes(x=ncols, y=d)) + geom_line()
+
+```
