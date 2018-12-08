@@ -8,19 +8,17 @@ Este repositorio alberga notas y código para la clase del diplomado de Data Sci
 
 ## [k-Vecinos cercanos](notebooks/k-vecinos.Rmd)
 
-## Regresión lineal
+## [Regresión lineal](notebooks/regresion-lineal.Rmd)
 
 ## Regresión logística
 
-## Regularización
+## Optimización de modelos
 
-## Evaluación de modelos (Pt. I)
+## Evaluación de modelos
 
 ## Árbol de clasificación y regresión
 
 ## Modelos de ensamble: Bosque aleatorio
-
-## Evaluación de modelos (Pt. II)
 
 ## Interpretabilidad
 
