@@ -1,0 +1,132 @@
+-weight--
+title: "Regresión Lineal"
+output: html_notebook
+---
+
+
+```{r}
+library(ISLR)
+library(ggplot2)
+
+mod.lin <- lm(mpg~weight, Auto)
+print(summary(mod.lin))
+
+ggplot(mapping=aes(x=mod.lin$residuals)) + geom_histogram(binwidth=2.5)
+print(mean(mod.lin$residuals))
+print(sd(mod.lin$residuals))
+
+ggplot(Auto, (aes(x=mpg, y=mod.lin$residuals))) + geom_point()
+```
+
+```{r}
+library(ISLR)
+library(ggplot2)
+library(MASS)
+
+bc <- boxcox(mpg~weight, data=Auto)
+lambda <- bc$x[bc$y == max(bc$y)]
+mod.lin <- lm(((mpg^lambda-1)/lambda)^(1/lambda)~weight, Auto)
+
+print(summary(mod.lin))
+
+ggplot(mapping=aes(x=mod.lin$residuals)) + geom_histogram(bins=20)
+print(mean(mod.lin$residuals))
+print(sd(mod.lin$residuals))
+
+ggplot(Auto, (aes(x=mpg, y=mod.lin$residuals))) + geom_point()
+```
+```{r}
+ggplot(Auto, aes(x=displacement, y=mpg, group=as.factor(cylinders), color=as.factor(cylinders))) +
+  geom_point() +
+  geom_smooth(method=lm, se=F)
+```
+
+```{r}
+library(dplyr)
+set.seed(42)
+datos <- data_frame(
+  x1 = rexp(100),
+  x2 = rnorm(100, 0, 5),
+  x3 = rbinom(100, 200, 0.3),
+  y = 0.3*x1 + 1.4*x2 - .8*x3 + rnorm(100, 0, 2.5)
+)
+ggplot(datos, aes(x=x2, y=y)) + geom_point() + geom_smooth(method=lm)
+ggplot(datos, aes(x=y)) + geom_histogram(bins=20)
+
+datos[datos$x2 == max(datos$x2), "x2"] <- 30
+datos[datos$x2 == max(datos$x2), "y"] <- 200
+ggplot(datos, aes(x=x2, y=y)) + geom_point() + geom_smooth(method=lm)
+
+```
+
+```{r}
+library(glmnet)
+set.seed(2*42)
+test <- data_frame(
+  x1 = rexp(50),
+  x2 = rnorm(50, 0, 5),
+  x3 = rbinom(50, 200, 0.3),
+  y = 0.3*x1 + 1.4*x2 - .8*x3 + rnorm(50, 0, 2.5)
+) 
+train_x <- as.matrix(datos[c("x1", "x2", "x3")])
+test_x <- as.matrix(test[c("x1", "x2", "x3")])
+lm.coef <- lm(y~x1+x2+x3, data=datos)
+ridge.coef <- glmnet(train_x, datos$y, alpha=0, lambda=3)$beta
+print(lm.coef$coef)
+print(ridge.coef)
+print(glmnet(train_x, datos$y, alpha=0, lambda=10)$beta)
+
+lambdas <- 1:150
+baseline <- mean((predict(lm.coef, test) - test$y)^2)
+ridge <- glmnet(train_x, datos$y, alpha=0, lambda=lambdas)
+ridge.mse <- colMeans((predict(ridge, test_x) - test$y)^2)
+
+ggplot(mapping=aes(x=lambdas, y=ridge.mse)) + 
+  geom_line() + 
+  geom_hline(yintercept=baseline)
+
+opt.lambda <- lambdas[ridge.mse == min(ridge.mse)]
+ridge$beta[,opt.lambda]
+```
+
+```{r}
+baseline <- mean((predict(lm.coef, test) - test$y)^2)
+lasso <- glmnet(train_x, datos$y, alpha=1, lambda=lambdas)
+lasso.mse <- colMeans((predict(lasso, test_x) - test$y)^2)
+
+ggplot(mapping=aes(x=lambdas, y=lasso.mse)) + 
+  geom_line() + 
+  geom_hline(yintercept=baseline)
+
+opt.lambda <- lambdas[lasso.mse == min(lasso.mse)]
+lasso$beta[,opt.lambda]
+```
+
+```{r}
+set.seed(42/2)
+p <- 300
+norms <- sapply(1:100, function(v) rnorm(1500, 0, v/10))
+exps <- sapply(1:100, function(e) rexp(1500, e/10))
+bins <- sapply(1:100, function(x) rbinom(1500, 200, x/100))
+
+coefs <- runif(300, 0, 1)
+x <- cbind(norms, exps, bins)
+y <- rowSums(sapply(1:300,function(i) x[,i]*coefs[i])) + rnorm(1500, 0, 10)
+
+train_x <- x[1:1000,]
+train_y <- y[1:1000]
+
+test_x <- x[1001:1500,]
+test_y <- y[1001:1500]
+
+lambdas <- 1:75/100
+lasso <- glmnet(train_x, train_y, alpha=1, lambda=lambdas)
+lasso.mse <- colMeans((predict(lasso, test_x) - test_y)^2)
+ggplot(mapping=aes(x=lasso$lambda, y=lasso.mse)) + 
+  geom_line()
+
+ggplot(mapping=aes(x=lasso$lambda, y=lasso$df)) +
+  geom_line()
+
+```
+
