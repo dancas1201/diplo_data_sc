@@ -3,8 +3,68 @@ title: "R Notebook"
 output: html_notebook
 ---
 
+Para estimar la esperanza condicional $E[g | X = x]$, una opción es promediar directamente de observaciones $y_i$ donde las correspondientes $x_i$ son, bajo alguna noción, similares a $x$. Esto, gracias a la ley de los grandes números, es un estimador asintótico de dicha esperanza. Para encontrar dichas $y_i$, una opción es buscar, con una métrica en el espacio de $X$, aquellos puntos similares en nuestro conjunto de entrenamiento.
+
+**Ejemplo**
+
+En el siguiente ejemplo, consideramos que nuestras variables $x$ son el peso y los caballos de fuerza, y la $y$ que queremos encontrar es el rendimiento (millas por galón). Un primer método para encontrar puntos similares puede ser dibujar un radio, con algún parámetro $r$ de radio, y considerar todos aquellos puntos que se encuentran dentro de dicho radio
+
 ```{r}
 library(ISLR)
+library(FNN)
+library(ggplot2)
+new_x <- data.frame(weight=3000, horsepower=125)
+ggplot(Auto, aes(x=weight, y=horsepower)) + 
+  geom_point() + 
+  geom_point(data=new_x, color="red", size=2) + 
+  geom_point(data=new_x, color="red", size=20, shape=1) + 
+  theme_minimal()
+```
+
+Un problema de hacer esto es que, si nuestro nuevo dato se encuentra lejos de la nube actual no tendremos manera de estimarlo
+
+```{r}
+library(ISLR)
+library(FNN)
+library(ggplot2)
+new_x <- data.frame(weight=3500, horsepower=200)
+ggplot(Auto, aes(x=weight, y=horsepower)) + 
+  geom_point() + 
+  geom_point(data=new_x, color="red", size=2) + 
+  geom_point(data=new_x, color="red", size=20, shape=1) + 
+  theme_minimal()
+```
+
+Quizá una alternativa más util sea encontrar los $k$ puntos más parecidos a nuestra observación, también conocidos como los $k$ vecinos más cercanos (_k nearest neighbors_).
+
+```{r}
+library(ISLR)
+library(ggplot2)
+library(pdist)
+new_x <- data.frame(weight=c(3500, 3500), horsepower=c(125, 200))
+dists <- as.matrix(pdist(new_x, Auto[c("weight", "horsepower")]))
+
+maxs <- sapply(Auto[c("weight", "horsepower")], max)
+mins <- sapply(Auto[c("weight", "horsepower")], min)
+normalize <- function(data, mxs, mns) { 
+  sapply(1:ncol(data), function(i) { (data[,i] - mns[i])/(mxs[i] - mns[i])})
+}
+
+auto_scaled <- normalize(Auto[c("weight", "horsepower")], maxs, mins)
+new_x_scaled <- normalize(new_x, maxs, mins)
+
+idxs <- get.knnx(auto_scaled, query=new_x_scaled, k=5)$nn.index
+ggplot(Auto, aes(x=weight, y=horsepower)) + 
+  geom_point(alpha=0.5) + 
+  geom_point(data=new_x, color="red", size=2) + 
+  geom_point(data=Auto[idxs,], color="cyan")
+  theme_minimal()
+```
+
+Probemos k-vecinos cercanos con el paquete FNN
+
+
+```{r}
 library(FNN)
 set.seed(42)
 n <- nrow(Auto)
@@ -28,21 +88,18 @@ print(mse.base)
 
 ```{r}
 library(ggplot2)
-knn.5 <- knn.reg(train_x, test=test_x, y=train_y, k=5)
-mse <- mean((test_y - knn.5$pred)^2)
-ggplot(mapping=aes(x=test_y, knn.5$pred)) + 
-  geom_point() +
-  geom_abline(intercept=0, slope=1) + 
-  xlab("Predichos") + 
-  ylab("Reales") +
-  ggtitle(paste0("k = 5, MSE = ", mse)) + 
-  theme_minimal()
+maxs <- sapply(train_x, max)
+mins <- sapply(train_x, min)
+
+train_x_scaled <- normalize(train_x, maxs, mins)
+test_x_scaled <-normalize(test_x, maxs, mins)
+
 ```
 
 
 ```{r}
-auto.knn <- function(k) {
-  knn <- knn.reg(train_x, test=test_x, y=train_y, k=k)
+auto.knn.reg <- function(k) {
+  knn <- knn.reg(train_x_scaled, test=test_x_scaled, y=train_y, k=k)
   mse <- mean((test_y - knn$pred)^2)
   ggplot(mapping=aes(x=test_y, knn$pred)) + 
     geom_point() +
@@ -52,21 +109,40 @@ auto.knn <- function(k) {
     ggtitle(paste0("k = ", k, ", MSE = ", mse)) + 
     theme_minimal() 
 }
-auto.knn(10)
+auto.knn.reg(5)
 ```
+
+El ajuste visual parece bueno, y el MSE es casi 10 veces menor que el del baseline. ¿Cómo varia el desempeño de knn con el número de vecinos?
 
 ```{r}
 auto.knn.mse <- function(k) {
-  knn <- knn.reg(train_x, test=test_x, y=train_y, k=k)
+  knn <- knn.reg(train_x_scaled, test=test_x_scaled, y=train_y, k=k)
   mse <- mean((test_y - knn$pred)^2)
   mse
 }
 
-mse.k <- sapply(300:1, auto.knn.mse)
-ggplot(mapping=aes(x=300:1, y=mse.k)) + 
+mse.k <- sapply(1:15, auto.knn.mse)
+ggplot(mapping=aes(x=1:15, y=mse.k)) + 
   geom_line() + 
-  geom_hline(yintercept = mse.base)
+  xlab("k") + 
+  ylab("MSE")
 ```
+
+Visto de otra manera, podemos estimar que $n-k$ es el número de parámetros de nuestro modelo de knn, es decir, mientras menos vecinos tenemos, más complejo es el modelo. En la siguiente gráfica mostramos como varian las predicciones dadas por knn, relativo a una de las variables $x$. Como podemos observar, menos vecinos ($k=5$) implican un modelo más complejo, con muchos más saltos, mientras que al incrementar el número de vecinos la función de predicción se hace más estable
+
+```{r}
+knn.5 <- knn.reg(train_x_scaled, y=train_y, k=5)$pred
+knn.100 <- knn.reg(train_x_scaled, y=train_y, k=100)$pred
+knn.250 <- knn.reg(train_x_scaled, y=train_y, k=250)$pred
+
+ggplot(train_x, aes(x=weight)) + geom_point(aes(y=train_y), alpha=0.5) +
+  geom_line(aes(y=knn.5), color="red") + 
+  geom_line(aes(y=knn.100), color="cyan") + 
+  geom_line(aes(y=knn.250), color="black") + 
+  theme_minimal()
+```
+
+KNN también es util para clasificar
 
 ```{r}
 ggplot(Auto, aes(x=origin, group=origin, y=mpg)) + geom_boxplot()
@@ -94,14 +170,19 @@ mis.cl.base
 ```
 
 ```{r}
+maxs <- sapply(train_x, max)
+mins <- sapply(train_x, min)
+
+train_x_scaled <- normalize(train_x, maxs, mins)
+test_x_scaled <-normalize(test_x, maxs, mins)
 
 japan.knn <- function(k) {
-  knn <- knn(train=train_x, test=test_x, cl=as.factor(train_y), k=k)
+  knn <- knn(train=train_x_scaled, test=test_x_scaled, cl=as.factor(train_y), k=k)
   mis.cl <- mean(knn != test_y)
   mis.cl
 }
 
-ks = 1:300
+ks = 1:100
 mis.cl.k <- sapply(ks, japan.knn)
 ggplot(mapping=aes(x=ks, y=mis.cl.k)) + geom_line() + 
   geom_hline(yintercept=mis.cl.base)
