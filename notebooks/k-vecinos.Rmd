@@ -131,14 +131,19 @@ ggplot(mapping=aes(x=1:15, y=mse.k)) +
 Visto de otra manera, podemos estimar que $n-k$ es el número de parámetros de nuestro modelo de knn, es decir, mientras menos vecinos tenemos, más complejo es el modelo. En la siguiente gráfica mostramos como varian las predicciones dadas por knn, relativo a una de las variables $x$. Como podemos observar, menos vecinos ($k=5$) implican un modelo más complejo, con muchos más saltos, mientras que al incrementar el número de vecinos la función de predicción se hace más estable
 
 ```{r}
-knn.5 <- knn.reg(train_x_scaled, y=train_y, k=5)$pred
-knn.100 <- knn.reg(train_x_scaled, y=train_y, k=100)$pred
-knn.250 <- knn.reg(train_x_scaled, y=train_y, k=250)$pred
+weight_scaled <- data.frame((train_x["weight"] - min(train_x["weight"]))/(max(train_x["weight"]) - min(train_x["weight"])))
+test_weight <- data.frame(w=0:100/100)
 
-ggplot(train_x, aes(x=weight)) + geom_point(aes(y=train_y), alpha=0.5) +
-  geom_line(aes(y=knn.5), color="red") + 
-  geom_line(aes(y=knn.100), color="cyan") + 
-  geom_line(aes(y=knn.250), color="black") + 
+knn.5 <- knn.reg(weight_scaled, test=test_weight, y=train_y, k=5)$pred
+knn.100 <- knn.reg(weight_scaled, test=test_weight, y=train_y, k=100)$pred
+knn.250 <- knn.reg(weight_scaled, test=test_weight, y=train_y, k=250)$pred
+
+test_weight_descaled <- test_weight*(max(train_x["weight"]) -min(train_x["weight"])) + min(train_x["weight"])
+ggplot(mapping=aes(x=train_x[["weight"]])) + 
+  geom_point(aes(y=train_y), alpha=0.5)  +
+  geom_line(aes(x=test_weight_descaled[["w"]], y=knn.5), colour="red") + 
+  geom_line(aes(x=test_weight_descaled[["w"]], y=knn.100), colour="blue") + 
+  geom_line(aes(x=test_weight_descaled[["w"]], y=knn.250), colour="black") + 
   theme_minimal()
 ```
 
