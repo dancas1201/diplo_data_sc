@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 Para estimar la esperanza condicional $E[g | X = x]$, una opción es promediar directamente de observaciones $y_i$ donde las correspondientes $x_i$ son, bajo alguna noción, similares a $x$. Esto, gracias a la ley de los grandes números, es un estimador asintótico de dicha esperanza. Para encontrar dichas $y_i$, una opción es buscar, con una métrica en el espacio de $X$, aquellos puntos similares en nuestro conjunto de entrenamiento.
