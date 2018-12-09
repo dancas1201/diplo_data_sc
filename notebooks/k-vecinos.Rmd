@@ -55,16 +55,15 @@ normalize <- function(data, mxs, mns) {
 auto_scaled <- normalize(Auto[c("weight", "horsepower")], maxs, mins)
 new_x_scaled <- normalize(new_x, maxs, mins)
 
-idxs <- get.knnx(auto_scaled, query=new_x_scaled, k=5)$nn.index
+idxs <- get.knnx(data = auto_scaled, query = new_x_scaled, k=5)$nn.index
 ggplot(Auto, aes(x=weight, y=horsepower)) + 
-  geom_point(alpha=0.5) + 
+  geom_point(alpha=0.7) + 
   geom_point(data=new_x, color="red", size=2) + 
-  geom_point(data=Auto[idxs,], color="cyan")
+  geom_point(data=Auto[idxs,], color="cyan") +
   theme_minimal()
 ```
 
 Probemos k-vecinos cercanos con el paquete FNN
-
 
 ```{r}
 library(FNN)
@@ -111,7 +110,7 @@ auto.knn.reg <- function(k) {
     ggtitle(paste0("k = ", k, ", MSE = ", mse)) + 
     theme_minimal() 
 }
-auto.knn.reg(5)
+auto.knn.reg(299)
 ```
 
 El ajuste visual parece bueno, y el MSE es casi 10 veces menor que el del baseline. ¿Cómo varia el desempeño de knn con el número de vecinos?
